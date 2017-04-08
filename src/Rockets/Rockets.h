@@ -8,16 +8,16 @@ namespace Rockets {
   struct Object {
     glm::vec3 position = glm::vec3(0);
     glm::vec3 velocity = glm::vec3(0);
+    glm::vec3 angularVelocity = glm::vec3(0);
+    glm::mat3 rotation = glm::mat3(1);
     glm::float1 mass = 1.0f;
   };
 
-  struct Sphere {
-    Object object = Object();
+  struct Sphere : public Object {
     glm::float1 radius;
   };
 
-  struct Rectangle {
-    Object object = Object();
+  struct Rectangle : public Object {
     glm::vec3 bounds = glm::vec3(0);
   };
 
@@ -30,13 +30,16 @@ namespace Rockets {
     glm::vec3 booster2 = glm::vec3(0);
     glm::vec3 booster3 = glm::vec3(0);
 
-    float length() {
+    auto length() const {
       return glm::length(booster1) + glm::length(booster2) + glm::length(booster3);
+    }
+
+    auto boosters() const {
+      return (booster1 + booster2 + booster3);
     }
   };
 
-  struct Rocket {
-    Sphere object = Sphere();
+  struct Rocket : public Rectangle {
     std::vector<FeulCell> feul;
     int feulUsed = 0;
   };
@@ -50,10 +53,10 @@ namespace Rockets {
 
   struct SimulationOptions {
     glm::float1 timeStep = 1.0f / 60.0f; // 60 times per second
+    glm::float1 frictionCoefficient = -0.35;
     glm::vec3 gravity = glm::vec3(0, -9.81, 0);
   };
 
   World Step(const SimulationOptions& options, const World& world);
   void StepInPlace(const SimulationOptions& options, World &world);
-
 }
