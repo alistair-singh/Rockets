@@ -9,7 +9,7 @@ namespace Rockets {
     glm::vec3 position = glm::vec3(0);
     glm::vec3 velocity = glm::vec3(0);
     glm::vec3 angularVelocity = glm::vec3(0);
-    glm::mat3 rotation = glm::mat3(1);
+    glm::quat rotation = glm::quat();
     glm::float1 mass = 1.0f;
   };
 

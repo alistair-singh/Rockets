@@ -57,6 +57,8 @@ namespace Rockets {
     }
 
     world.rocket.position += (world.rocket.velocity * options.timeStep);
-    world.rocket.rotation += star(world.rocket.angularVelocity) * world.rocket.rotation * options.timeStep;
+
+    auto jitQuat = glm::quat(world.rocket.angularVelocity);
+    world.rocket.rotation = glm::normalize(world.rocket.rotation +(jitQuat * world.rocket.rotation) * options.timeStep * 0.5f);
   }
 }

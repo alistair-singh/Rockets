@@ -34,9 +34,9 @@ auto makeFeulCells(int amount)
 Rockets::World InitialWorld() {
   Rockets::World world;
   world.rocket.bounds = vec3(1, 3, 1);
-  //world.rocket.position = vec3(0, 1.5, 0);
+  world.rocket.position = vec3(0, 1.5, 0);
   world.rocket.mass = 1.0f;
-  //world.rocket.angularVelocity = vec3(0.5,0.5,0.5);
+  world.rocket.angularVelocity = vec3(1,1,1);
   world.rocket.feul = makeFeulCells(100);
   return world;
 }
@@ -54,7 +54,7 @@ public:
     auto lambertShader = gl::getStockShader(gl::ShaderDef().color().lambert());
 
     mFloor = gl::Batch::create(geom::Plane().size(vec2(30)).subdivisions(ivec2(30)), colorShader);
-    mRocket = gl::Batch::create(geom::Cone(), lambertShader);
+    mRocket = gl::Batch::create(geom::Cube(), lambertShader);
     mEndpoint = gl::Batch::create(geom::Sphere(), lambertShader);
 
     auto textureShader = gl::getStockShader(gl::ShaderDef().texture());
@@ -141,7 +141,7 @@ public:
       gl::ScopedColor color(Color::hex(0xf44242));
       gl::ScopedModelMatrix model;
 
-      auto m1 = mat4(mWorld.rocket.rotation);
+      auto m1 = glm::mat4_cast(mWorld.rocket.rotation);
       auto m2 = glm::translate(mWorld.rocket.position);
       auto m3 = glm::scale(mWorld.rocket.bounds);
       gl::multModelMatrix(m2 * m1 * m3);
