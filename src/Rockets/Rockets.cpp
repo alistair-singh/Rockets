@@ -19,6 +19,7 @@ namespace Rockets {
   void StepInPlace(const SimulationOptions& options, World &world)
   {
     world.worldTime += options.timeStep;
+    world.steps++;
     auto booster = glm::vec3(0);
 
     if (world.rocket.feul.size() > world.rocket.feulUsed) {

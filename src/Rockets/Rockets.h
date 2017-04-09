@@ -49,6 +49,7 @@ namespace Rockets {
     Sphere endpoint = Sphere();
     Rocket rocket = Rocket();
     glm::float1 worldTime = 0;
+    glm::int64 steps = 0;
   };
 
   struct SimulationOptions {

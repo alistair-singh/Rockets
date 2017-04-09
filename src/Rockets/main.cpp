@@ -6,13 +6,6 @@
 
 #include "Rockets.h"
 
-//#include <Windows.h>
-//
-//
-//// For debugging
-//#include <io.h>
-//#include <fcntl.h>
-
 using namespace ci;
 using namespace ci::app;
 using namespace std;
@@ -25,8 +18,8 @@ auto makeFeulCells(int amount)
   std::generate_n(std::back_inserter(result), amount, [] {
     Rockets::FeulCell cell;
     auto random = [] { return static_cast <float> (std::rand()) / static_cast <float> (RAND_MAX); };
-    //cell.booster1 = vec3(random(), random() + 0.0981, random()) * 10.0f;
-    cell.booster1 = vec3(0, 9.81 + 0.35, 0);
+    cell.booster1 = vec3(random(), random() + 0.0981 + 0.050, random()) * 15.0f;
+    //cell.booster1 = vec3(0, 9.81 + 0.35, 0);
     /*
     cell.booster2 = vec3(random(), random(), random()) * 10.0f;
     cell.booster3 = vec3(random(), random(), random()) * 10.0f;
@@ -42,21 +35,14 @@ Rockets::World InitialWorld() {
   world.rocket.bounds = vec3(1, 3, 1);
   world.rocket.position = vec3(0, 1.5, 0);
   world.rocket.mass = 1.0f;
-  world.rocket.angularVelocity = vec3(0,10,0);
-  world.rocket.feul = makeFeulCells(1000);
+  world.rocket.angularVelocity = vec3(0,0.1,0);
+  world.rocket.feul = makeFeulCells(10);
   return world;
 }
 
 class RocketsApp : public App {
 public:
   void setup() override {
-    //if (AllocConsole()) {
-    //  FILE* pCout;
-    //  freopen_s(&pCout, "CONOUT$", "w", stdout);
-    //  SetConsoleTitle(L"Debug Console");
-    //  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
-    //}
-
     // Set up the camera.
     mCamera.lookAt(cameraPosition, vec3(0, 20.0f, 0));
     mCamera.setPerspective(40.0f, getWindowAspectRatio(), 0.01f, 100000);
@@ -70,6 +56,9 @@ public:
     mRocket = gl::Batch::create(geom::Cube().size(1, 1, 1), lambertShader);
     mEndpoint = gl::Batch::create(geom::Sphere(), lambertShader);
 
+    auto textureShader = gl::getStockShader(gl::ShaderDef().texture());
+    mText = gl::Batch::create(geom::Rect().rect(messageBox), textureShader);
+
     mWorld = InitialWorld();
   }
 
@@ -82,6 +71,21 @@ public:
     if (follow) {
       mCamera.lookAt(mWorld.rocket.position);
     }
+
+    std::ostringstream str;
+    str 
+      << "Time: " << mWorld.worldTime << '\n'
+      << "Steps: " << mWorld.steps << '\n'
+      << "Position: " << mWorld.rocket.position << '\n'
+      << "Rotation: " << mWorld.rocket.rotation << '\n'
+      << "Velocity: " << mWorld.rocket.velocity << '\n'
+      << "Angular Velocity: " << mWorld.rocket.angularVelocity << '\n'
+      << "Thrust: " << mWorld.rocket.feul[mWorld.rocket.feulUsed].boosters() << '\n'
+      << "Feul: " << mWorld.rocket.feul.size() - mWorld.rocket.feulUsed << '\n'
+      << "Mass: " << mWorld.rocket.mass << '\n';
+    TextBox tbox = TextBox().alignment(TextBox::LEFT).font(Font("Consolas", 14)).size(messageBox.getSize()).text(str.str());
+    auto sz = tbox.render();
+    mTexture = gl::Texture::create(sz);
   }
 
   void draw() override {
@@ -145,9 +149,12 @@ public:
       mFloor->draw();
     }
 
-    //std::cout << "[" << mWorld.rocket.rotation[0].x << ", " << mWorld.rocket.rotation[0].y << ", " << mWorld.rocket.rotation[0].z << "\n"
-    //                 << mWorld.rocket.rotation[1].x << ", " << mWorld.rocket.rotation[1].y << ", " << mWorld.rocket.rotation[1].z << "\n"
-    //                 << mWorld.rocket.rotation[2].x << ", " << mWorld.rocket.rotation[2].y << ", " << mWorld.rocket.rotation[2].z << "]\n";
+    gl::ScopedMatrices p1;
+    gl::setMatricesWindow(getWindowSize());
+    {
+      gl::ScopedTextureBind text(mTexture);
+      mText->draw();
+    }
   }
 
   void keyDown(KeyEvent ev) override {
@@ -188,7 +195,9 @@ public:
     }
   }
 private:
-  gl::BatchRef mFloor, mRocket, mEndpoint;
+  gl::BatchRef mFloor, mRocket, mEndpoint, mText;
+  gl::Texture2dRef mTexture;
+  Rectf messageBox = Rectf(5, 5, 310, 155);
 
   Rockets::SimulationOptions mOptions;
   Rockets::World mWorld;
