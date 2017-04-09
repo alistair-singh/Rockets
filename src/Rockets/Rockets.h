@@ -18,7 +18,7 @@ namespace Rockets {
   };
 
   struct Rectangle : public Object {
-    glm::vec3 bounds = glm::vec3(0);
+    glm::vec3 bounds = glm::vec3(1);
   };
 
   struct Endpoint {

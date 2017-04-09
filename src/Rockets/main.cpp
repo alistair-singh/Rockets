@@ -18,8 +18,9 @@ auto makeFeulCells(int amount)
   std::generate_n(std::back_inserter(result), amount, [] {
     Rockets::FeulCell cell;
     auto random = [] { return static_cast <float> (std::rand()) / static_cast <float> (RAND_MAX); };
-    cell.booster1 = vec3(random(), random() + 0.0981 + 0.050, random()) * 15.0f;
-    //cell.booster1 = vec3(0, 9.81 + 0.35, 0);
+    //cell.booster1 = vec3(random(), random() + 0.0981 + 1, random()) * 5.0f;
+    cell.booster1 = vec3(0, 9.81 + 0.35, 0);
+    //cell.booster1 = vec3(.15, 9.81 + 0.50, .15);
     /*
     cell.booster2 = vec3(random(), random(), random()) * 10.0f;
     cell.booster3 = vec3(random(), random(), random()) * 10.0f;
@@ -33,10 +34,10 @@ auto makeFeulCells(int amount)
 Rockets::World InitialWorld() {
   Rockets::World world;
   world.rocket.bounds = vec3(1, 3, 1);
-  world.rocket.position = vec3(0, 1.5, 0);
+  //world.rocket.position = vec3(0, 1.5, 0);
   world.rocket.mass = 1.0f;
-  world.rocket.angularVelocity = vec3(0,0.1,0);
-  world.rocket.feul = makeFeulCells(10);
+  //world.rocket.angularVelocity = vec3(0.5,0.5,0.5);
+  world.rocket.feul = makeFeulCells(100);
   return world;
 }
 
@@ -53,7 +54,7 @@ public:
     auto lambertShader = gl::getStockShader(gl::ShaderDef().color().lambert());
 
     mFloor = gl::Batch::create(geom::Plane().size(vec2(30)).subdivisions(ivec2(30)), colorShader);
-    mRocket = gl::Batch::create(geom::Cube().size(1, 1, 1), lambertShader);
+    mRocket = gl::Batch::create(geom::Cone(), lambertShader);
     mEndpoint = gl::Batch::create(geom::Sphere(), lambertShader);
 
     auto textureShader = gl::getStockShader(gl::ShaderDef().texture());
@@ -73,6 +74,10 @@ public:
     }
 
     std::ostringstream str;
+    auto feulLeft = mWorld.rocket.feul.size() - mWorld.rocket.feulUsed;
+    auto booster = feulLeft == 0
+      ? vec3(0, 0, 0) 
+      : mWorld.rocket.feul[mWorld.rocket.feulUsed].boosters();
     str 
       << "Time: " << mWorld.worldTime << '\n'
       << "Steps: " << mWorld.steps << '\n'
@@ -80,8 +85,8 @@ public:
       << "Rotation: " << mWorld.rocket.rotation << '\n'
       << "Velocity: " << mWorld.rocket.velocity << '\n'
       << "Angular Velocity: " << mWorld.rocket.angularVelocity << '\n'
-      << "Thrust: " << mWorld.rocket.feul[mWorld.rocket.feulUsed].boosters() << '\n'
-      << "Feul: " << mWorld.rocket.feul.size() - mWorld.rocket.feulUsed << '\n'
+      << "Thrust: " << booster << '\n'
+      << "Feul: " << feulLeft << '\n'
       << "Mass: " << mWorld.rocket.mass << '\n';
     TextBox tbox = TextBox().alignment(TextBox::LEFT).font(Font("Consolas", 14)).size(messageBox.getSize()).text(str.str());
     auto sz = tbox.render();

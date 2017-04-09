@@ -9,6 +9,13 @@ namespace Rockets {
                     -a.y, a.x, 0);
   }
 
+  auto changebasis(glm::vec3 a, glm::vec3 b) {
+    auto c = glm::dot(b, a);
+    auto v = glm::cross(b, a);
+    auto cob = glm::mat3(1) + star(v) + star(v)*star(v)*(1 / (1 + c));
+    return cob;
+  }
+
   World Step(const SimulationOptions& options, const World& world)
   {
     auto newWorld = world;
@@ -25,14 +32,14 @@ namespace Rockets {
     if (world.rocket.feul.size() > world.rocket.feulUsed) {
       booster = world.rocket.feul[world.rocket.feulUsed].boosters();
 
-      if ((((int)(world.worldTime / options.timeStep)) % (60 * 5)) == 0)
+      if (world.rocket.feulUsed < world.rocket.feul.size() && (world.steps % (int)ceil(powf(options.timeStep, -1))) == 0)
       {
         world.rocket.feulUsed++;
       }
     }
     auto acceleration = booster + (options.gravity * world.rocket.mass);
     world.rocket.velocity += ((acceleration / world.rocket.mass) * options.timeStep);
-    
+
     auto f1 = glm::length(world.rocket.velocity)*options.frictionCoefficient;
     if (glm::abs(f1) < glm::abs(options.frictionCoefficient))
     {
@@ -48,11 +55,8 @@ namespace Rockets {
     {
       world.rocket.velocity = glm::vec3(0);
     }
-    world.rocket.position += (world.rocket.velocity * options.timeStep);
 
-    auto sta = star(world.rocket.angularVelocity);
-    auto rot =  sta * world.rocket.rotation * options.timeStep;
-    auto rot2 = world.rocket.rotation + rot;
-    world.rocket.rotation = rot2;
+    world.rocket.position += (world.rocket.velocity * options.timeStep);
+    world.rocket.rotation += star(world.rocket.angularVelocity) * world.rocket.rotation * options.timeStep;
   }
 }
