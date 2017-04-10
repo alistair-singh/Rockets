@@ -87,6 +87,9 @@ public:
       << "Simulation: " << (pause ? "Paused" : "Running" ) << '\n'
       << "Camera Position: " << mCamera.getEyePoint() << '\n'
       << "Camera Direction: " << mCamera.getViewDirection() << '\n'
+      << "Time Step: " << mOptions.timeStep << " s\n"
+      << "Friction Coefficient: " << mOptions.frictionCoefficient << '\n'
+      << "Gravity: " << mOptions.gravity << '\n'
       << "Time: " << mWorld.worldTime << '\n'
       << "Steps: " << mWorld.steps << '\n'
       << "Position: " << mWorld.rocket.position << '\n'
