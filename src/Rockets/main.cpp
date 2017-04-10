@@ -19,7 +19,7 @@ auto makeFeulCells(int amount)
     Rockets::FeulCell cell;
     auto random = [] { return static_cast <float> (std::rand()) / static_cast <float> (RAND_MAX); };
     //cell.booster1 = vec3(random(), random() + 0.0981 + 1, random()) * 10.0f;
-    cell.booster1 = vec3(0, 9.81 + 0.35, 0);
+    cell.booster1 = vec3(0, 9.81, 0)*20.0f;
     //cell.booster1 = vec3(.15, 9.81 + 0.50, .15);
     /*
     cell.booster2 = vec3(random(), random(), random()) * 10.0f;
@@ -33,13 +33,13 @@ auto makeFeulCells(int amount)
 
 Rockets::World InitialWorld() {
   Rockets::World world;
-  world.rocket.bounds = vec3(1, 3, 1);
+  world.rocket.bounds = vec3(10, 20, 3);
   world.rocket.position = vec3(0, 1.5, 0);
-  world.rocket.mass = 1.0f;
-  world.rocket.angularMomentum = vec3(0, 1, 0);
+  world.rocket.mass = 20.0f;
+  world.rocket.angularMomentum = 20.0f*vec3(1, 1, 1);
   world.rocket.inertiaTensorBody = world.rocket.calculateInertiaTensorBody();
   world.rocket.invertedInertiaTensorBody = glm::inverse(world.rocket.inertiaTensorBody);
-  world.rocket.feul = makeFeulCells(100);
+  world.rocket.feul = makeFeulCells(10000);
   return world;
 }
 
@@ -69,7 +69,7 @@ public:
     if (!pause) {
       auto currentTime = getElapsedSeconds();
       while ((currentTime - elapseTime) > mOptions.timeStep) {
-        Rockets::StepInPlace(mOptions, mWorld);
+        for(int i = 0; i < speed; i++) Rockets::StepInPlace(mOptions, mWorld);
         elapseTime += mOptions.timeStep;
       }
     }
@@ -85,6 +85,7 @@ public:
       : mWorld.rocket.feul[mWorld.rocket.feulUsed].boosters();
     str
       << "Simulation: " << (pause ? "Paused" : "Running" ) << '\n'
+      << "Speed: " << speed << "\n"
       << "Camera Position: " << mCamera.getEyePoint() << '\n'
       << "Camera Direction: " << mCamera.getViewDirection() << '\n'
       << "Time Step: " << mOptions.timeStep << " s\n"
@@ -186,11 +187,22 @@ public:
     case KeyEvent::KEY_f:
       follow = !follow;
       break;
+    case KeyEvent::KEY_EQUALS:
+      if (++speed > 0) { if (pause) { pause = false; elapseTime = getElapsedSeconds(); } };
+      break;
+    case KeyEvent::KEY_MINUS:
+      if (--speed < 0) { speed = 0; pause = true; };
+      break;
+    case KeyEvent::KEY_s:
+      pause = true;
+      speed = 1;
+      Rockets::StepInPlace(mOptions, mWorld);
+      break;
     case KeyEvent::KEY_r:
       mWorld = InitialWorld();
       break;
     case KeyEvent::KEY_p:
-      if (!(pause = !pause)) elapseTime = getElapsedSeconds();
+      if (!(pause = !pause)) { elapseTime = getElapsedSeconds(); speed = 1; }
       break;
     case KeyEvent::KEY_ESCAPE:
     case KeyEvent::KEY_q:
@@ -208,6 +220,7 @@ private:
   double elapseTime;
   bool follow = true;
   bool pause = false;
+  int speed = 1;
 
   CameraPersp mCamera;
   CameraUi mCamUi;
