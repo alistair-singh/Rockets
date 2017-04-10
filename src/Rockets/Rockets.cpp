@@ -42,18 +42,25 @@ namespace Rockets {
     world.worldTime += options.timeStep;
     world.steps++;
 
-    auto booster = glm::vec3(0);
+    auto torque = glm::vec3(0);
+    auto force = glm::vec3(0);
+    auto r = world.rocket.rotationMatrix();
     if (world.rocket.feul.size() > world.rocket.feulUsed) {
-      booster = world.rocket.feul[world.rocket.feulUsed].boosters();
+      torque = world.rocket.feul[world.rocket.feulUsed].torque(r);
+      force = world.rocket.feul[world.rocket.feulUsed].force(r);
       if (world.rocket.feulUsed < world.rocket.feul.size() && (world.steps % (int)ceil(powf(options.timeStep, -1))) == 0)
       {
         world.rocket.feulUsed++;
       }
     }
 
-    auto acceleration = booster + (options.gravity * world.rocket.mass);
+    world.rocket.angularMomentum += torque * options.timeStep;
+    world.rocket.angularMomentum += calculateFriction(world.rocket.angularMomentum, options.frictionCoefficient) * options.timeStep;
+
+    auto acceleration = (options.gravity * world.rocket.mass) + (force * world.rocket.mass);
     world.rocket.momentum += (acceleration * options.timeStep);
     world.rocket.momentum += calculateFriction(world.rocket.momentum, options.frictionCoefficient) * options.timeStep;
+
     world.rocket.position += (world.rocket.velocity() * options.timeStep);
     world.rocket.rotation = glm::normalize(0.5f * glm::quat(world.rocket.angularVelocity() * options.timeStep) * world.rocket.rotation);
   }

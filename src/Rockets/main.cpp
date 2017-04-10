@@ -18,8 +18,8 @@ auto makeFeulCells(int amount)
   std::generate_n(std::back_inserter(result), amount, [] {
     Rockets::FeulCell cell;
     auto random = [] { return static_cast <float> (std::rand()) / static_cast <float> (RAND_MAX); };
-    //cell.booster1 = vec3(random(), random() + 0.0981 + 1, random()) * 10.0f;
-    cell.booster1 = vec3(0, 9.81, 0)*20.0f;
+    cell.boosters = vec4(random() + 9.81 + 0.35,random() + 9.81 + 0.35,random() + 9.81 + 0.35, random() + 9.81 + 0.35);
+    //cell.booster1 = vec3(0, 19.81 + 0.50, 0);
     //cell.booster1 = vec3(.15, 9.81 + 0.50, .15);
     /*
     cell.booster2 = vec3(random(), random(), random()) * 10.0f;
@@ -33,10 +33,9 @@ auto makeFeulCells(int amount)
 
 Rockets::World InitialWorld() {
   Rockets::World world;
-  world.rocket.bounds = vec3(10, 20, 3);
+  world.rocket.bounds = vec3(1, 4, 1);
   world.rocket.position = vec3(0, 1.5, 0);
-  world.rocket.mass = 20.0f;
-  world.rocket.angularMomentum = 20.0f*vec3(1, 1, 1);
+  world.rocket.mass = 1.0f;
   world.rocket.inertiaTensorBody = world.rocket.calculateInertiaTensorBody();
   world.rocket.invertedInertiaTensorBody = glm::inverse(world.rocket.inertiaTensorBody);
   world.rocket.feul = makeFeulCells(10000);
@@ -80,11 +79,21 @@ public:
 
     std::ostringstream str;
     auto feulLeft = mWorld.rocket.feul.size() - mWorld.rocket.feulUsed;
-    auto booster = feulLeft == 0
-      ? vec3(0, 0, 0) 
-      : mWorld.rocket.feul[mWorld.rocket.feulUsed].boosters();
+    auto rotationMatrix = mWorld.rocket.rotationMatrix();
+
+    auto boosters = vec4(0);
+    auto boosterTorque = vec3(0);
+    auto boosterForce = vec3(0);
+    if (feulLeft > 0)
+    {
+      boosters = mWorld.rocket.feul[mWorld.rocket.feulUsed].boosters;
+      boosterTorque = mWorld.rocket.feul[mWorld.rocket.feulUsed].torque(rotationMatrix);
+      boosterForce = mWorld.rocket.feul[mWorld.rocket.feulUsed].force(rotationMatrix);
+    }
+
     str
       << "Simulation: " << (pause ? "Paused" : "Running" ) << '\n'
+      << "World Size (B): " << sizeof(mWorld) << "\n"
       << "Speed: " << speed << "\n"
       << "Camera Position: " << mCamera.getEyePoint() << '\n'
       << "Camera Direction: " << mCamera.getViewDirection() << '\n'
@@ -95,12 +104,15 @@ public:
       << "Steps: " << mWorld.steps << '\n'
       << "Position: " << mWorld.rocket.position << '\n'
       << "Rotation: " << mWorld.rocket.rotation << '\n'
+      << "Rotation Matrix: " << rotationMatrix << '\n'
       << "Momentum: " << mWorld.rocket.momentum << '\n'
       << "Velocity: " << mWorld.rocket.velocity() << '\n'
       << "Inertia Body Tensor: " << mWorld.rocket.inertiaTensorBody << '\n'
       << "Angular Momentum: " << mWorld.rocket.angularMomentum << '\n'
       << "Angular Velocity: " << mWorld.rocket.angularVelocity() << '\n'
-      << "Thrust: " << booster << '\n'
+      << "Boosters: " << boosters << '\n'
+      << "Torque: " << boosterTorque << '\n'
+      << "Force: " << boosterForce << '\n'
       << "Feul: " << feulLeft << '\n'
       << "Mass: " << mWorld.rocket.mass << '\n';
     TextBox tbox = TextBox().alignment(TextBox::LEFT).font(Font("Consolas", 14)).size(messageBox.getSize()).text(str.str());

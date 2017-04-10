@@ -57,16 +57,25 @@ namespace Rockets {
   };
 
   struct FeulCell {
-    glm::vec3 booster1 = glm::vec3(0);
-    glm::vec3 booster2 = glm::vec3(0);
-    glm::vec3 booster3 = glm::vec3(0);
+    glm::vec4 boosters;
 
-    auto length() const {
-      return glm::length(booster1) + glm::length(booster2) + glm::length(booster3);
+    auto torque(glm::mat3 r) const {
+      auto down = glm::vec3(1, -1.5, 1) * r;
+      auto du = glm::vec3(0, boosters[0], 0) * r;
+
+      auto down2 = glm::vec3(-1, -1.5, 1) * r;
+      auto du2 = glm::vec3(0, boosters[1], 0)* r;
+
+      auto down3 = glm::vec3(-1, -1.5, -1) * r;
+      auto du3 = glm::vec3(0, boosters[2], 0) * r;
+
+      auto down4 = glm::vec3(1, -1.5, -1) * r;
+      auto du4 = glm::vec3(0, boosters[3], 0) * r;
+
+      return glm::cross(down, du) + glm::cross(down2, du2) + glm::cross(down3, du3) + glm::cross(down4, du4);
     }
-
-    auto boosters() const {
-      return (booster1 + booster2 + booster3);
+    auto force(glm::mat3 r) const {
+      return r * glm::vec3(0.0f, boosters[0] + boosters[1] + boosters[2] + boosters[3], 0.0f);
     }
   };
 
