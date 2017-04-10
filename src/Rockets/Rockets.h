@@ -7,10 +7,35 @@ namespace Rockets {
 
   struct Object {
     glm::vec3 position = glm::vec3(0);
-    glm::vec3 velocity = glm::vec3(0);
-    glm::vec3 angularVelocity = glm::vec3(0);
     glm::quat rotation = glm::quat();
+    glm::vec3 momentum = glm::vec3(0);
+    glm::vec3 angularMomentum = glm::vec3(0);
+
     glm::float1 mass = 1.0f;
+    glm::mat3 inertiaTensorBody = glm::mat3(0);
+    glm::mat3 invertedInertiaTensorBody = glm::mat3(0);
+
+    auto velocity() const {
+      return (1.0f / mass) * momentum;
+    };
+
+    auto rotationMatrix() const {
+      return glm::toMat3(rotation);
+    }
+
+    auto inertiaTensor() const {
+      auto r = rotationMatrix();
+      return r * inertiaTensorBody * glm::transpose(r);
+    };
+
+    auto inertiaTensorInverse() const {
+      auto r = rotationMatrix();
+      return r * invertedInertiaTensorBody * glm::transpose(r);
+    };
+
+    auto angularVelocity() const {
+      return inertiaTensorInverse() * angularMomentum;
+    };
   };
 
   struct Sphere : public Object {
@@ -19,6 +44,12 @@ namespace Rockets {
 
   struct Rectangle : public Object {
     glm::vec3 bounds = glm::vec3(1);
+
+    auto calculateInertiaTensorBody() const {
+      return (mass / 12.0f) * glm::mat3(glm::pow(bounds.y,2) + glm::pow(bounds.z,2),0,0,
+                                        0, glm::pow(bounds.x, 2) + glm::pow(bounds.z, 2),0,
+                                        0,0, glm::pow(bounds.x, 2) + glm::pow(bounds.y, 2));
+    }
   };
 
   struct Endpoint {

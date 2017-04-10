@@ -36,7 +36,9 @@ Rockets::World InitialWorld() {
   world.rocket.bounds = vec3(1, 3, 1);
   world.rocket.position = vec3(0, 1.5, 0);
   world.rocket.mass = 1.0f;
-  world.rocket.angularVelocity = vec3(M_PI * 2,0,0);
+  world.rocket.angularMomentum = vec3(0, 1, 0);
+  world.rocket.inertiaTensorBody = world.rocket.calculateInertiaTensorBody();
+  world.rocket.invertedInertiaTensorBody = glm::inverse(world.rocket.inertiaTensorBody);
   world.rocket.feul = makeFeulCells(100);
   return world;
 }
@@ -89,8 +91,11 @@ public:
       << "Steps: " << mWorld.steps << '\n'
       << "Position: " << mWorld.rocket.position << '\n'
       << "Rotation: " << mWorld.rocket.rotation << '\n'
-      << "Velocity: " << mWorld.rocket.velocity << '\n'
-      << "Angular Velocity: " << mWorld.rocket.angularVelocity << '\n'
+      << "Momentum: " << mWorld.rocket.momentum << '\n'
+      << "Velocity: " << mWorld.rocket.velocity() << '\n'
+      << "Inertia Body Tensor: " << mWorld.rocket.inertiaTensorBody << '\n'
+      << "Angular Momentum: " << mWorld.rocket.angularMomentum << '\n'
+      << "Angular Velocity: " << mWorld.rocket.angularVelocity() << '\n'
       << "Thrust: " << booster << '\n'
       << "Feul: " << feulLeft << '\n'
       << "Mass: " << mWorld.rocket.mass << '\n';
@@ -185,6 +190,7 @@ public:
       if (!(pause = !pause)) elapseTime = getElapsedSeconds();
       break;
     case KeyEvent::KEY_ESCAPE:
+    case KeyEvent::KEY_q:
       quit();
       break;
     }
@@ -192,7 +198,7 @@ public:
 private:
   gl::BatchRef mFloor, mRocket, mEndpoint, mText;
   gl::Texture2dRef mTexture;
-  Rectf messageBox = Rectf(5, 5, 310, 155);
+  Rectf messageBox = Rectf(5, 5, 155*3, 155 * 3);
 
   Rockets::SimulationOptions mOptions;
   Rockets::World mWorld;

@@ -9,11 +9,25 @@ namespace Rockets {
                     -a.y, a.x, 0);
   }
 
-  auto changebasis(glm::vec3 a, glm::vec3 b) {
+  auto changeBasis(glm::vec3 a, glm::vec3 b) {
     auto c = glm::dot(b, a);
     auto v = glm::cross(b, a);
     auto cob = glm::mat3(1) + star(v) + star(v)*star(v)*(1 / (1 + c));
     return cob;
+  }
+
+  auto calculateFriction(glm::vec3 momentum, glm::float1 frictionCoefficient)
+  {
+    auto scaledFriction = glm::length(momentum)*frictionCoefficient;
+    if (glm::abs(scaledFriction) < glm::abs(frictionCoefficient))
+    {
+      scaledFriction = frictionCoefficient;
+    }
+
+    auto friction = scaledFriction * glm::normalize(momentum);
+    if (glm::dot(friction, momentum) < 0) return friction;
+
+    return glm::vec3(0);
   }
 
   World Step(const SimulationOptions& options, const World& world)
@@ -27,38 +41,20 @@ namespace Rockets {
   {
     world.worldTime += options.timeStep;
     world.steps++;
-    auto booster = glm::vec3(0);
 
+    auto booster = glm::vec3(0);
     if (world.rocket.feul.size() > world.rocket.feulUsed) {
       booster = world.rocket.feul[world.rocket.feulUsed].boosters();
-
       if (world.rocket.feulUsed < world.rocket.feul.size() && (world.steps % (int)ceil(powf(options.timeStep, -1))) == 0)
       {
         world.rocket.feulUsed++;
       }
     }
+
     auto acceleration = booster + (options.gravity * world.rocket.mass);
-    world.rocket.velocity += ((acceleration / world.rocket.mass) * options.timeStep);
-
-    auto f1 = glm::length(world.rocket.velocity)*options.frictionCoefficient;
-    if (glm::abs(f1) < glm::abs(options.frictionCoefficient))
-    {
-      f1 = options.frictionCoefficient;
-    }
-    auto friction = (f1 * options.timeStep) * glm::normalize(world.rocket.velocity);
-    auto s = glm::dot(friction, world.rocket.velocity);
-    if (s < 0)
-    {
-      world.rocket.velocity += friction;
-    }
-    else
-    {
-      world.rocket.velocity = glm::vec3(0);
-    }
-
-    world.rocket.position += (world.rocket.velocity * options.timeStep);
-
-    auto jitQuat = glm::quat(world.rocket.angularVelocity * options.timeStep);
-    world.rocket.rotation = glm::normalize(0.5f * jitQuat * world.rocket.rotation);
+    world.rocket.momentum += (acceleration * options.timeStep);
+    world.rocket.momentum += calculateFriction(world.rocket.momentum, options.frictionCoefficient) * options.timeStep;
+    world.rocket.position += (world.rocket.velocity() * options.timeStep);
+    world.rocket.rotation = glm::normalize(0.5f * glm::quat(world.rocket.angularVelocity() * options.timeStep) * world.rocket.rotation);
   }
 }
