@@ -18,7 +18,7 @@ auto makeFeulCells(int amount)
   std::generate_n(std::back_inserter(result), amount, [] {
     Rockets::FeulCell cell;
     auto random = [] { return static_cast <float> (std::rand()) / static_cast <float> (RAND_MAX); };
-    //cell.booster1 = vec3(random(), random() + 0.0981 + 1, random()) * 5.0f;
+    //cell.booster1 = vec3(random(), random() + 0.0981 + 1, random()) * 10.0f;
     cell.booster1 = vec3(0, 9.81 + 0.35, 0);
     //cell.booster1 = vec3(.15, 9.81 + 0.50, .15);
     /*
@@ -36,7 +36,7 @@ Rockets::World InitialWorld() {
   world.rocket.bounds = vec3(1, 3, 1);
   world.rocket.position = vec3(0, 1.5, 0);
   world.rocket.mass = 1.0f;
-  world.rocket.angularVelocity = vec3(1,1,1);
+  world.rocket.angularVelocity = vec3(M_PI * 2,0,0);
   world.rocket.feul = makeFeulCells(100);
   return world;
 }
@@ -45,7 +45,7 @@ class RocketsApp : public App {
 public:
   void setup() override {
     // Set up the camera.
-    mCamera.lookAt(cameraPosition, vec3(0, 20.0f, 0));
+    mCamera.lookAt(vec3(30, 44, 30), vec3(0, 20.0f, 0));
     mCamera.setPerspective(40.0f, getWindowAspectRatio(), 0.01f, 100000);
     mCamUi = CameraUi(&mCamera, getWindow());
 
@@ -64,11 +64,14 @@ public:
   }
 
   void update() override {
-    auto currentTime = getElapsedSeconds();
-    while ((currentTime - elapseTime) > mOptions.timeStep) {
-      Rockets::StepInPlace(mOptions, mWorld);
-      elapseTime += mOptions.timeStep;
+    if (!pause) {
+      auto currentTime = getElapsedSeconds();
+      while ((currentTime - elapseTime) > mOptions.timeStep) {
+        Rockets::StepInPlace(mOptions, mWorld);
+        elapseTime += mOptions.timeStep;
+      }
     }
+
     if (follow) {
       mCamera.lookAt(mWorld.rocket.position);
     }
@@ -78,7 +81,10 @@ public:
     auto booster = feulLeft == 0
       ? vec3(0, 0, 0) 
       : mWorld.rocket.feul[mWorld.rocket.feulUsed].boosters();
-    str 
+    str
+      << "Simulation: " << (pause ? "Paused" : "Running" ) << '\n'
+      << "Camera Position: " << mCamera.getEyePoint() << '\n'
+      << "Camera Direction: " << mCamera.getViewDirection() << '\n'
       << "Time: " << mWorld.worldTime << '\n'
       << "Steps: " << mWorld.steps << '\n'
       << "Position: " << mWorld.rocket.position << '\n'
@@ -167,32 +173,16 @@ public:
     {
     case KeyEvent::KEY_SPACE:
       follow = false;
-      cameraPosition = vec3(30, 44, 30);
-      mCamera.lookAt(cameraPosition, vec3(0, 20.0f, 0));
+      mCamera.lookAt(vec3(30, 44, 30), vec3(0, 20.0f, 0));
       break;
     case KeyEvent::KEY_f:
       follow = !follow;
       break;
-    case KeyEvent::KEY_w:
-    case KeyEvent::KEY_UP:
-      cameraPosition.y += 1;
-      break;
-    case KeyEvent::KEY_s:
-    case KeyEvent::KEY_DOWN:
-      cameraPosition.y -= 1;
-      break;
-    case KeyEvent::KEY_a:
-    case KeyEvent::KEY_LEFT:
-      cameraPosition.x -= 1;
-      cameraPosition.z += 1;
-      break;
-    case KeyEvent::KEY_d:
-    case KeyEvent::KEY_RIGHT:
-      cameraPosition.x += 1;
-      cameraPosition.z -= 1;
-      break;
     case KeyEvent::KEY_r:
       mWorld = InitialWorld();
+      break;
+    case KeyEvent::KEY_p:
+      if (!(pause = !pause)) elapseTime = getElapsedSeconds();
       break;
     case KeyEvent::KEY_ESCAPE:
       quit();
@@ -208,10 +198,10 @@ private:
   Rockets::World mWorld;
   double elapseTime;
   bool follow = true;
+  bool pause = false;
 
   CameraPersp mCamera;
   CameraUi mCamUi;
-  vec3 cameraPosition = vec3(30, 44, 30);
 };
 
 CINDER_APP(RocketsApp, RendererGl(RendererGl::Options().msaa(16)))
