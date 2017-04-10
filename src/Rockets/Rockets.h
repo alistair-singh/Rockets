@@ -60,17 +60,19 @@ namespace Rockets {
     glm::vec4 boosters;
 
     auto torque(glm::mat3 r) const {
+      const float spin = 0;
+
       auto down = glm::vec3(1, -1.5, 1) * r;
-      auto du = glm::vec3(0, boosters[0], 0) * r;
+      auto du = glm::vec3(spin, boosters[0]-spin, 0) * r;
 
       auto down2 = glm::vec3(-1, -1.5, 1) * r;
-      auto du2 = glm::vec3(0, boosters[1], 0)* r;
+      auto du2 = glm::vec3(0, boosters[1]-spin,spin)* r;
 
       auto down3 = glm::vec3(-1, -1.5, -1) * r;
-      auto du3 = glm::vec3(0, boosters[2], 0) * r;
+      auto du3 = glm::vec3(-spin, boosters[2]-spin, 0) * r;
 
       auto down4 = glm::vec3(1, -1.5, -1) * r;
-      auto du4 = glm::vec3(0, boosters[3], 0) * r;
+      auto du4 = glm::vec3(0, boosters[3]-spin, -spin) * r;
 
       return glm::cross(down, du) + glm::cross(down2, du2) + glm::cross(down3, du3) + glm::cross(down4, du4);
     }

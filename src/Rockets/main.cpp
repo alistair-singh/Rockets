@@ -18,7 +18,7 @@ auto makeFeulCells(int amount)
   std::generate_n(std::back_inserter(result), amount, [] {
     Rockets::FeulCell cell;
     auto random = [] { return static_cast <float> (std::rand()) / static_cast <float> (RAND_MAX); };
-    cell.boosters = vec4(random() + 9.81 + 0.35,random() + 9.81 + 0.35,random() + 9.81 + 0.35, random() + 9.81 + 0.35);
+    cell.boosters = vec4(random()*5 + 9.81 + 0.35,random() * 5 + 9.81 + 0.35,random() * 5 + 9.81 + 0.35, random() * 5 + 9.81 + 0.35);
     //cell.booster1 = vec3(0, 19.81 + 0.50, 0);
     //cell.booster1 = vec3(.15, 9.81 + 0.50, .15);
     /*
